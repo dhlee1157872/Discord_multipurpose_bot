@@ -15,25 +15,6 @@ const client = new Discord.Client({intents :
     ]
 });
 
-
-// connects with mysql database
-const mysql = require('mysql');
-const connection = mysql.createConnection({
-    host: process.env.HOST,
-    user: process.env.USER,
-    password: process.env.PASSWORD,
-    database: process.env.DATABASE
-});
-connection.connect(function(err) {
-    if(err){
-        console.error('error connecting: ' + err.stack);
-        return;
-    }
-
-    console.log('connected as: ' + connection.threadID);
-});
-
-
 //to read files and put the commands into a collection
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
@@ -52,13 +33,13 @@ for(const file of commandFiles){
 }
 
 
-const prefix = '-';
 //starts bot
 client.on('ready', ()=> {
     console.log('Bot Ready...')
 });
 
-//
+//for -commands
+const prefix = '-';
 client.on("messageCreate", message => {
     if(!message.content.startsWith(prefix) || message.author.bot) return;
 
