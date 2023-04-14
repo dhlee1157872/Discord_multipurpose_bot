@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, OAuth2Scopes, REST, Routes, SlashCommandBuilder, Events } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, OAuth2Scopes, REST, Routes, SlashCommandBuilder, Events, Guild, GuildChannelManager, userMention } = require('discord.js');
 const Discord = require('discord.js');
 const env = require('dotenv').config();
 const fs = require('node:fs');
@@ -14,6 +14,39 @@ const client = new Discord.Client({intents :
         GatewayIntentBits.DirectMessages,
     ]
 });
+var mysql = require('mysql2');
+const { channel } = require('node:diagnostics_channel');
+const mydb = mysql.createConnection({
+    host: process.env.HOST,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    database: process.env.DATABASE
+});
+
+//this initial query is only for deploying commands, without it, the deploy-commands.js throws an error when compiling
+mydb.query(
+    'select * from timer',
+    //this function is needed for compile to not throw an error
+    function(err,results,fields) {
+    }
+);
+
+//checks to see if time is met
+async function checktime(){
+    sqlline = 'select * from timer';
+    let result = await mydb.promise().query(sqlline);
+    result = result[0]
+    currtime = Date.now();
+    for(let i = 0; i < result.length; i++){
+        userdata = result[i];
+        userid = userdata['user_id']
+        userid = userMention(userid);
+        if(currtime > userdata['unixsec'] && userdata['unixsec'] != null){
+           var channel = await client.channels.fetch(process.env.CHANNEL_ID);
+           await channel.send('<@' + userdata['user_id'] + '>');
+        }
+    }
+}
 
 //to read files and put the commands into a collection
 client.commands = new Collection();
@@ -35,7 +68,9 @@ for(const file of commandFiles){
 
 //starts bot
 client.on('ready', ()=> {
-    console.log('Bot Ready...')
+    console.log('Bot Ready...');
+    checktime();
+    //setInterval(function(){checktime()}, 60000);
 });
 
 //for -commands
