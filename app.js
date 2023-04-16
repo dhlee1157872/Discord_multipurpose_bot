@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, OAuth2Scopes, REST, Routes, SlashCommandBuilder, Events, Guild, GuildChannelManager, userMention } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, OAuth2Scopes, REST, Routes, SlashCommandBuilder, Events, Guild, GuildChannelManager, EmbedBuilder} = require('discord.js');
 const Discord = require('discord.js');
 const env = require('dotenv').config();
 const fs = require('node:fs');
@@ -35,17 +35,19 @@ mydb.query(
 async function checktime(){
     sqlline = 'select * from timer';
     let result = await mydb.promise().query(sqlline);
-    result = result[0]
-    currtime = Date.now();
+    result = result[0];
+    timersup = [];
+    currtime = Date.now()+30000;
     for(let i = 0; i < result.length; i++){
-        userdata = result[i];
-        userid = userdata['user_id']
-        userid = userMention(userid);
+        userdata = result[i];        
         if(currtime > userdata['unixsec'] && userdata['unixsec'] != null){
-           var channel = await client.channels.fetch(process.env.CHANNEL_ID);
-           await channel.send('<@' + userdata['user_id'] + '>');
+            userid = userdata['user_id'];
+            timersup.push(userid);
+            sqlline = 'update timer set unixsec = null where user_id = \'' + userid + '\''
+            await mydb.promise().query(sqlline);
         }
     }
+    return timersup;
 }
 
 //to read files and put the commands into a collection
@@ -69,8 +71,21 @@ for(const file of commandFiles){
 //starts bot
 client.on('ready', ()=> {
     console.log('Bot Ready...');
-    checktime();
-    //setInterval(function(){checktime()}, 60000);
+    checktime().then(userlists => {
+        for(var i = 0; i < userlists.length; i++){
+           let channel = client.channels.cache.get(process.env.CHANNEL_ID);
+           channel.send('<@'+ userlists[i] +'> time is up!!');
+        }
+    });
+    
+    setInterval(function(){
+        checktime().then(userlists => {
+            for(var i = 0; i < userlists.length; i++){
+               let channel = client.channels.cache.get(process.env.CHANNEL_ID);
+               channel.send('<@'+ userlists[i] +'> time is up!!');
+            }
+        })
+    }, 60000);
 });
 
 //for -commands

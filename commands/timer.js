@@ -62,7 +62,7 @@ module.exports = {
     async execute(Interaction){
         var interactionUser = Interaction.member.user
         var exists;
-        var sqlline = 'select count(user_id) from timer where user_id = ' + interactionUser.id;
+        var sqlline = 'select count(user_id) from timer where user_id = \'' + interactionUser.id+ '\'';
 
         //creates a promise for async control
         let countresult = await mydb.promise().query(sqlline);
@@ -72,11 +72,11 @@ module.exports = {
         exists = countval['count(user_id)'];    
 
         if(exists == 0){
-            sqlline = 'insert into timer(user_id, username) values (' + interactionUser.id + ', \'' + interactionUser.username + '\')';
+            sqlline = 'insert into timer(user_id, username) values (\'' + interactionUser.id + '\', \'' + interactionUser.username + '\')';
             mydb.execute(sqlline);
         }
 
-        sqlline = 'select * from timer where user_id = ' + interactionUser.id;
+        sqlline = 'select * from timer where user_id = \'' + interactionUser.id+'\'';
         result = await mydb.promise().query(sqlline);
         result = result[0][0];
 
@@ -102,17 +102,17 @@ module.exports = {
             currtime = currtime + tottime[i].gettime;
         }
 
-        sqlline = 'update timer set unixsec = ' + currtime + ' where user_id = ' + interactionUser.id;
+        sqlline = 'update timer set unixsec = ' + currtime + ' where user_id = \'' + interactionUser.id +'\'';
         await mydb.promise().query(sqlline);
 
 
         if(result['username'] != interactionUser.username){
-            sqlline = 'update timer set username = \'' + interactionUser.username + '\' where user_id = ' + interactionUser.id;
+            sqlline = 'update timer set username = \'' + interactionUser.username + '\' where user_id = \'' + interactionUser.id+'\'';
             await mydb.promise().query(sqlline);
         }
 
 
         remindtime = new Date(currtime).toLocaleTimeString('en-US');//YOU NEED TO MAKE INTO NEW DATE CONSTRUCTOR
-        await Interaction.reply('we will remind you at ' + remindtime);
+        await Interaction.reply('I will remind you at ' + remindtime);
     },
 };
